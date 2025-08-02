@@ -78,12 +78,34 @@ h1 {
 
 .todo-item span {
     flex-grow: 1;
-    cursor: pointer;
+}
+
+.todo-item.yet-to-start span {
+    color: #c0392b; /* Red */
+    font-weight: 500;
+}
+
+.todo-item.work-in-progress span {
+    color: #27ae60; /* Green */
 }
 
 .todo-item.completed span {
     text-decoration: line-through;
     color: #888;
+}
+
+.status-select {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    font-size: 12px;
+    margin-left: 10px;
+    color: #555;
+    cursor: pointer;
+    -webkit-appearance: none; /* Hides default arrow on some browsers */
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .delete-btn {
