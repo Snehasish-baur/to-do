@@ -166,6 +166,7 @@ footer {
 footer a {
     display: inline-flex;
     align-items: center;
+    flex-direction: column;
     text-decoration: none;
     color: #f0f0f0; /* Lighter color for readability on dark background */
     font-size: 14px;
@@ -183,5 +184,6 @@ footer a:hover {
     height: 24px;
     margin-bottom:4px;
 }
+
 
 
