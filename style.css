@@ -1,14 +1,15 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f4f4;
+    background-color: #008080;
     color: #333;
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     min-height: 100vh;
     margin: 0;
     padding-top: 50px;
 }
+
 
 .container {
     background: #fff;
@@ -19,17 +20,20 @@ body {
     max-width: 500px;
 }
 
+
 h1 {
     text-align: center;
     color: #444;
     margin-bottom: 20px;
 }
 
+
 .input-area {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
 }
+
 
 #todo-input {
     flex-grow: 1;
@@ -38,6 +42,7 @@ h1 {
     border-radius: 4px;
     font-size: 16px;
 }
+
 
 #add-btn {
     padding: 10px 20px;
@@ -50,15 +55,18 @@ h1 {
     transition: background-color 0.3s ease;
 }
 
+
 #add-btn:hover {
     background-color: #218838;
 }
+
 
 #todo-list {
     list-style: none;
     padding: 0;
     margin: 0;
 }
+
 
 .todo-item {
     display: flex;
@@ -68,31 +76,51 @@ h1 {
     transition: background-color 0.2s ease;
 }
 
+
 .todo-item:last-child {
     border-bottom: none;
 }
+
 
 .todo-item:hover {
     background-color: #f9f9f9;
 }
 
+
 .todo-item span {
-    flex-grow: 1;
+    /* The container will handle the growth now */
 }
+
+
+.todo-text-container {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+
+.time-info {
+    font-size: 11px;
+    color: #777;
+    margin-top: 4px;
+}
+
 
 .todo-item.yet-to-start span {
     color: #c0392b; /* Red */
     font-weight: 500;
 }
 
+
 .todo-item.work-in-progress span {
     color: #27ae60; /* Green */
 }
+
 
 .todo-item.completed span {
     text-decoration: line-through;
     color: #888;
 }
+
 
 .status-select {
     padding: 4px 8px;
@@ -108,6 +136,7 @@ h1 {
     appearance: none;
 }
 
+
 .delete-btn {
     background: #dc3545;
     color: white;
@@ -121,6 +150,36 @@ h1 {
     transition: opacity 0.3s ease;
 }
 
+
 .todo-item:hover .delete-btn {
     opacity: 1;
 }
+
+
+footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-bottom: 20px;
+}
+
+
+footer a {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: #f0f0f0; /* Lighter color for readability on dark background */
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+
+footer a:hover {
+    color: #fff;
+}
+
+
+.github-logo {
+    margin-right: 8px;
+    fill: currentColor;
+}
+
