@@ -179,7 +179,9 @@ footer a:hover {
 
 
 .github-logo {
-    margin-right: 8px;
-    fill: currentColor;
+    width: 24px;
+    height: 24px;
+    margin-bottom:4px;
 }
+
 
