@@ -81,29 +81,37 @@ body {
 }
 
 
+/* New Header for responsive layout */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+
 h1 {
-    text-align: center;
     color: var(--text-color);
     font-weight: 700;
-    margin-bottom: 20px;
+    margin: 0;
     letter-spacing: -1px;
+    font-size: 1.5rem; /* Adjusted for mobile */
 }
 
 
 /* --- Theme Toggle Button --- */
 .theme-btn {
-    position: absolute;
-    top: 28px;
-    right: 25px;
+    position: static; /* Changed for flexbox layout */
     background: none;
     border: 1px solid var(--border-color);
     color: var(--text-color);
     padding: 8px 12px;
     border-radius: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px; /* Slightly smaller for mobile */
     transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s, transform 0.3s;
     z-index: 10;
+    flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 
@@ -471,6 +479,29 @@ body.dark-mode .github-logo {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+
+/* --- Responsive Adjustments --- */
+@media (min-width: 600px) {
+    .header {
+        justify-content: center; /* Center title on larger screens */
+        position: relative;
+    }
+
+
+    h1 {
+        font-size: 2rem; /* Restore font size */
+    }
+
+
+    .theme-btn {
+        position: absolute; /* Revert to absolute positioning */
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 14px; /* Restore font size */
     }
 }
 
