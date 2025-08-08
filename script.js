@@ -102,6 +102,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return parts.join(' ');
     };
+
+
+    // Helper function to find and convert URLs in text to clickable links
+    const autoLinkUrls = (html) => {
+        const urlPattern = /((?:https?:\/\/|www\.)[^\s<>"'.,!?;:]+)/gi;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+
+        const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        // Collect all text nodes that are not already inside a link
+        while (walker.nextNode()) {
+            if (!walker.currentNode.parentElement.closest('a')) {
+                textNodes.push(walker.currentNode);
+            }
+        }
+
+
+        textNodes.forEach(node => {
+            const text = node.nodeValue;
+            // Use replace with a function to create the link
+            const newHtml = text.replace(urlPattern, (match) => {
+                const url = match.startsWith('www.') ? `https://${match}` : match;
+                // Use rel="noopener noreferrer" for security
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+            });
+            // If the content changed, replace the text node with a new fragment
+            if (newHtml !== text) {
+                const replacementFragment = document.createRange().createContextualFragment(newHtml);
+                node.replaceWith(replacementFragment);
+            }
+        });
+        return tempDiv.innerHTML;
+    };
     // Function to render todos to the DOM
     const renderTodos = () => {
         todoList.innerHTML = ''; // Clear the list first
@@ -146,33 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
             textContainer.className = 'todo-text-container';
 
 
-            if (todo.isEditing) {
-                const editInput = document.createElement('input');
-                editInput.type = 'text';
-                editInput.className = 'edit-input';
-                editInput.value = todo.text;
-                textContainer.appendChild(editInput);
-                // Auto-focus and select text
-                setTimeout(() => {
-                    editInput.focus();
-                    editInput.select();
-                }, 0);
-            } else {
-                textContainer.appendChild(span);
-
-
-                // Create element for time info
-                const timeInfo = document.createElement('div');
-                timeInfo.className = 'time-info';
-                const startTimeFormatted = new Date(todo.startTime).toLocaleString();
-                const duration = formatDuration(Date.now() - todo.startTime);
-                timeInfo.textContent = `Started: ${startTimeFormatted} | Duration: ${duration}`;
-                textContainer.appendChild(timeInfo);
-            }
-
-
-
-
             // Create the status dropdown
             const statusSelect = document.createElement('select');
             statusSelect.className = 'status-select';
@@ -196,8 +204,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
 
+            if (todo.isEditing) {
+                const editInput = document.createElement('input');
+                editInput.type = 'text';
+                editInput.className = 'edit-input';
+                editInput.value = todo.text;
+                textContainer.appendChild(editInput);
+                // Auto-focus and select text
+                setTimeout(() => {
+                    editInput.focus();
+                    editInput.select();
+                }, 0);
+            } else {
+                textContainer.appendChild(span);
 
 
+                // Create element for time info
+                const timeInfo = document.createElement('div');
+                timeInfo.className = 'time-info';
+                const startTimeFormatted = new Date(todo.startTime).toLocaleString();
+                const duration = formatDuration(Date.now() - todo.startTime);
+                timeInfo.textContent = `Started: ${startTimeFormatted} | Duration: ${duration}`;
+                textContainer.appendChild(timeInfo);
+                textContainer.appendChild(statusSelect);
+            }
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
             deleteBtn.innerHTML = '&#128465;'; // Dustbin icon
@@ -226,7 +256,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             li.appendChild(statusIcon);
             li.appendChild(textContainer);
-            li.appendChild(statusSelect);
             li.appendChild(editBtn);
             li.appendChild(detailsBtn);
             li.appendChild(deleteBtn);
@@ -382,8 +411,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Changed from textarea to the contenteditable div
                     const editor = openLi.querySelector('.details-editor');
                     if (editor) {
-                        // Changed from .value to .innerHTML
-                        todos[openIndex].details = editor.innerHTML.trim();
+                        let content = editor.innerHTML.trim();
+                        content = autoLinkUrls(content); // Autolink the content
+                        todos[openIndex].details = content;
                     }
                 }
             }
@@ -430,7 +460,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const openDetailsLi = todoList.querySelector(`.todo-item[data-index='${openDetailsIndex}']`);
                 const editor = openDetailsLi.querySelector('.details-editor');
                 if (editor) {
-                    todos[openDetailsIndex].details = editor.innerHTML.trim();
+                    let content = editor.innerHTML.trim();
+                    content = autoLinkUrls(content); // Autolink the content
+                    todos[openDetailsIndex].details = content;
                 }
                 todos[openDetailsIndex].isDetailsOpen = false;
             }
