@@ -2,10 +2,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const todoInput = document.getElementById('todo-input');
     const addBtn = document.getElementById('add-btn');
     const todoList = document.getElementById('todo-list');
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const body = document.body;
+
+
+    // --- THEME SWITCHER LOGIC ---
+
+
+    // Function to apply the saved or default theme
+    const applyTheme = () => {
+        // 1. Get theme from localStorage, defaulting to 'light'
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        // 2. Remove any existing theme classes to avoid conflicts
+        body.classList.remove('light-mode', 'dark-mode');
+        // 3. Add the correct theme class to the body
+        body.classList.add(`${savedTheme}-mode`);
+        // 4. Update the button text to show the next action
+        if (themeToggleBtn) {
+            themeToggleBtn.textContent = savedTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+        }
+    };
+
+
+    // Event listener for the theme toggle button
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = body.classList.contains('dark-mode') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme); // Save the new theme preference
+            applyTheme();
+        });
+    }
 
 
     // Load todos from local storage
     let todos = JSON.parse(localStorage.getItem('todos')) || [];
+
+
 
 
     // --- MIGRATION LOGIC ---
@@ -20,16 +53,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!todo.startTime) {
             todo.startTime = Date.now();
         }
+        if (todo.details === undefined) { // Add details property if it doesn't exist
+            todo.details = '';
+        }
+        if (todo.isEditing === undefined) { // Add editing property
+            todo.isEditing = false;
+        }
         if (!todo.status) { // Ensure all todos have a status for robustness
             todo.status = 'yet-to-start';
         }
     });
 
 
+
+
     // Function to save todos to local storage
     const saveTodos = () => {
         localStorage.setItem('todos', JSON.stringify(todos));
     };
+
+
 
 
     // Helper function to format duration from milliseconds to a readable string
@@ -41,14 +84,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const minutes = Math.floor((totalSeconds % 3600) / 60);
 
 
+
+
         let parts = [];
         if (days > 0) parts.push(`${days}d`);
         if (hours > 0) parts.push(`${hours}h`);
         if (minutes > 0) parts.push(`${minutes}m`);
 
 
+
+
         // If duration is less than a minute, show "Just now"
         if (parts.length === 0) return 'Just now';
+
+
 
 
         return parts.join(' ');
@@ -57,17 +106,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderTodos = () => {
         todoList.innerHTML = ''; // Clear the list first
         if (todos.length === 0) {
-            todoList.innerHTML = '<li class="todo-item" style="justify-content: center; color: #888;">No to-dos yet!</li>';
+            // Use a class for styling the empty message, defined in CSS
+            todoList.innerHTML = '<li class="todo-item empty-list-message">No to-dos yet!</li>';
             return;
         }
         todos.forEach((todo, index) => {
             const li = document.createElement('li');
-            li.className = `todo-item ${todo.status}`; // Use status for class
+            const span = document.createElement('span');
+            span.textContent = todo.text;
+
+
+            // Base class for all items.
+            li.className = `todo-item status-${todo.status}`; // Add status class for CSS styling
             li.dataset.index = index;
 
 
-            const span = document.createElement('span');
-            span.textContent = todo.text;
+
+
+            // Create status icon based on todo status
+            const statusIcon = document.createElement('span');
+            statusIcon.className = 'status-icon';
+            // Set icon text content based on status. Colors are now handled by CSS.
+            switch (todo.status) {
+                case 'completed':
+                    statusIcon.textContent = '✓';
+                    break;
+                case 'work-in-progress':
+                    statusIcon.textContent = '--';
+                    break;
+                case 'yet-to-start':
+                default:
+                    statusIcon.textContent = '✗';
+                    break;
+            }
 
 
             // Create a container for the text and time info
@@ -75,18 +146,31 @@ document.addEventListener('DOMContentLoaded', () => {
             textContainer.className = 'todo-text-container';
 
 
-            // Create element for time info
-            const timeInfo = document.createElement('div');
-            timeInfo.className = 'time-info';
+            if (todo.isEditing) {
+                const editInput = document.createElement('input');
+                editInput.type = 'text';
+                editInput.className = 'edit-input';
+                editInput.value = todo.text;
+                textContainer.appendChild(editInput);
+                // Auto-focus and select text
+                setTimeout(() => {
+                    editInput.focus();
+                    editInput.select();
+                }, 0);
+            } else {
+                textContainer.appendChild(span);
 
 
-            const startTimeFormatted = new Date(todo.startTime).toLocaleString();
-            const duration = formatDuration(Date.now() - todo.startTime);
-            timeInfo.textContent = `Started: ${startTimeFormatted} | Duration: ${duration}`;
+                // Create element for time info
+                const timeInfo = document.createElement('div');
+                timeInfo.className = 'time-info';
+                const startTimeFormatted = new Date(todo.startTime).toLocaleString();
+                const duration = formatDuration(Date.now() - todo.startTime);
+                timeInfo.textContent = `Started: ${startTimeFormatted} | Duration: ${duration}`;
+                textContainer.appendChild(timeInfo);
+            }
 
 
-            textContainer.appendChild(span);
-            textContainer.appendChild(timeInfo);
 
 
             // Create the status dropdown
@@ -97,6 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'work-in-progress': 'Work in progress',
                 'completed': 'Completed'
             };
+
+
 
 
             for (const [value, text] of Object.entries(statuses)) {
@@ -110,17 +196,115 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
 
+
+
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
-            deleteBtn.textContent = 'Delete';
+            deleteBtn.innerHTML = '&#128465;'; // Dustbin icon
+            deleteBtn.title = 'Delete Task'; // Accessibility tooltip
 
 
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-btn';
+            if (todo.isEditing) {
+                editBtn.innerHTML = '✓'; // Save icon
+                editBtn.title = 'Save Task';
+            } else {
+                editBtn.innerHTML = '✏️'; // Edit icon (pen)
+                editBtn.title = 'Edit Task';
+            }
+
+
+            const detailsBtn = document.createElement('button');
+            detailsBtn.className = 'details-btn';
+            if (todo.isDetailsOpen) {
+                detailsBtn.textContent = '−'; // Minus sign
+                detailsBtn.title = 'Close Details';
+            } else {
+                detailsBtn.textContent = '+';
+                detailsBtn.title = 'Open Details';
+            }
+            li.appendChild(statusIcon);
             li.appendChild(textContainer);
             li.appendChild(statusSelect);
+            li.appendChild(editBtn);
+            li.appendChild(detailsBtn);
             li.appendChild(deleteBtn);
+
+
+            // If details view is open for this todo, render the editor
+            if (todo.isDetailsOpen) {
+                const detailsContainer = document.createElement('div');
+                detailsContainer.className = 'details-inline-container';
+
+
+                // --- Create Toolbar ---
+                const toolbar = document.createElement('div');
+                toolbar.className = 'details-toolbar';
+
+
+                const createToolbarButton = (command, title, content) => {
+                    const button = document.createElement('button');
+                    button.className = 'toolbar-btn';
+                    button.title = title;
+                    button.dataset.command = command; // Add command for state checking
+                    button.innerHTML = content;
+                    button.addEventListener('mousedown', (e) => {
+                        e.preventDefault(); // Prevent editor from losing focus
+                        if (command === 'createLink') {
+                            const url = prompt('Enter the URL:', 'https://');
+                            if (url) {
+                                document.execCommand(command, false, url);
+                            }
+                        } else {
+                            document.execCommand(command, false, null);
+                        }
+                        updateToolbar(); // Re-check state after executing a command
+                    });
+                    return button;
+                };
+
+
+                toolbar.appendChild(createToolbarButton('bold', 'Bold', '<b>B</b>'));
+                toolbar.appendChild(createToolbarButton('italic', 'Italic', '<i>I</i>'));
+                toolbar.appendChild(createToolbarButton('underline', 'Underline', '<u>U</u>'));
+                toolbar.appendChild(createToolbarButton('createLink', 'Add Link', '🔗'));
+
+
+                // --- Create Editor ---
+                const detailsEditor = document.createElement('div');
+                detailsEditor.className = 'details-editor';
+                detailsEditor.contentEditable = true;
+                detailsEditor.innerHTML = todo.details || '';
+
+
+                // --- Toolbar State Update Logic ---
+                const updateToolbar = () => {
+                    const buttons = toolbar.querySelectorAll('.toolbar-btn');
+                    buttons.forEach(btn => {
+                        // Only check commands that have a state (e.g., not 'createLink')
+                        if (btn.dataset.command !== 'createLink') {
+                            const isActive = document.queryCommandState(btn.dataset.command);
+                            btn.classList.toggle('is-active', isActive);
+                        }
+                    });
+                };
+
+
+                detailsEditor.addEventListener('keyup', updateToolbar);
+                detailsEditor.addEventListener('mouseup', updateToolbar);
+                detailsEditor.addEventListener('focus', updateToolbar);
+
+
+                detailsContainer.appendChild(toolbar);
+                detailsContainer.appendChild(detailsEditor);
+                li.appendChild(detailsContainer);
+            }
             todoList.appendChild(li);
         });
     };
+
+
 
 
     // Function to add a new todo
@@ -130,7 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
             todos.push({
                 text: todoText,
                 status: 'yet-to-start',
-                startTime: Date.now()
+                startTime: Date.now(),
+                details: '',
+                isEditing: false
             });
             todoInput.value = '';
             saveTodos();
@@ -139,8 +325,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
+
+
     // Event listener for the add button
     addBtn.addEventListener('click', addTodo);
+
+
 
 
     // Event listener for pressing Enter in the input field
@@ -151,20 +341,119 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+
+
     // Event listener for clicks on the todo list (for completing and deleting)
     todoList.addEventListener('click', (e) => {
-        // Handle only delete button clicks
-        if (e.target.classList.contains('delete-btn')) {
+        const target = e.target;
+
+
+        // Handle delete button clicks
+        if (target.classList.contains('delete-btn')) {
+            const li = target.closest('.todo-item');
+            if (!li || !li.dataset.index) return;
+            const index = parseInt(li.dataset.index, 10);
+            const taskText = todos[index].text;
+
+
+            // Add a confirmation dialog before deleting
+            if (confirm(`Are you sure you want to delete this task:\n"${taskText}"`)) {
+                todos.splice(index, 1);
+                saveTodos();
+                renderTodos();
+            }
+        }
+        // Handle details button clicks to toggle the editor
+        else if (target.classList.contains('details-btn')) {
             const li = e.target.closest('.todo-item');
             if (!li || !li.dataset.index) return;
+            const clickedIndex = parseInt(li.dataset.index, 10);
 
 
-            const index = parseInt(li.dataset.index, 10);
-            todos.splice(index, 1);
+            // Find if there's a currently open details section
+            const openIndex = todos.findIndex(t => t.isDetailsOpen);
+
+
+            // If a section is open, save its content before doing anything else.
+            // This ensures data is not lost when switching between detail views.
+            if (openIndex !== -1) {
+                const openLi = todoList.querySelector(`.todo-item[data-index='${openIndex}']`);
+                if (openLi) {
+                    // Changed from textarea to the contenteditable div
+                    const editor = openLi.querySelector('.details-editor');
+                    if (editor) {
+                        // Changed from .value to .innerHTML
+                        todos[openIndex].details = editor.innerHTML.trim();
+                    }
+                }
+            }
+
+
+            // Determine the new state. If we clicked the button of an already
+            // open item, we are closing it. Otherwise, we are opening a new one.
+            const isOpeningNew = (openIndex !== clickedIndex);
+
+
+            // Close all detail views in the data model
+            todos.forEach(t => t.isDetailsOpen = false);
+
+
+            // If we are opening a new one, set its state to open
+            if (isOpeningNew) {
+                todos[clickedIndex].isDetailsOpen = true;
+            }
+            saveTodos(); // Save any detail changes and the new open/closed states
+            renderTodos(); // Re-render the UI
+        }
+        // Handle edit button clicks
+        else if (target.classList.contains('edit-btn')) {
+            const li = target.closest('.todo-item');
+            if (!li || !li.dataset.index) return;
+            const clickedIndex = parseInt(li.dataset.index, 10);
+
+
+            // Find and save any other item that is currently being edited
+            const currentlyEditingIndex = todos.findIndex(t => t.isEditing);
+            if (currentlyEditingIndex !== -1 && currentlyEditingIndex !== clickedIndex) {
+                const currentlyEditingLi = todoList.querySelector(`.todo-item[data-index='${currentlyEditingIndex}']`);
+                const input = currentlyEditingLi.querySelector('.edit-input');
+                if (input && input.value.trim()) {
+                    todos[currentlyEditingIndex].text = input.value.trim();
+                }
+                todos[currentlyEditingIndex].isEditing = false;
+            }
+
+
+            // Find and save any open details section
+            const openDetailsIndex = todos.findIndex(t => t.isDetailsOpen);
+            if (openDetailsIndex !== -1) {
+                const openDetailsLi = todoList.querySelector(`.todo-item[data-index='${openDetailsIndex}']`);
+                const editor = openDetailsLi.querySelector('.details-editor');
+                if (editor) {
+                    todos[openDetailsIndex].details = editor.innerHTML.trim();
+                }
+                todos[openDetailsIndex].isDetailsOpen = false;
+            }
+
+
+            // Toggle the editing state for the clicked item
+            const wasEditing = todos[clickedIndex].isEditing;
+            todos[clickedIndex].isEditing = !wasEditing;
+
+
+            // If we just finished editing, save the new text from the input
+            if (wasEditing) {
+                const input = li.querySelector('.edit-input');
+                if (input && input.value.trim()) {
+                    todos[clickedIndex].text = input.value.trim();
+                }
+            }
             saveTodos();
             renderTodos();
         }
     });
+
+
 
 
     // Event listener for status changes
@@ -181,13 +470,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    // Event listener for Enter/Escape keys in edit mode
+    todoList.addEventListener('keydown', (e) => {
+        if (e.target.classList.contains('edit-input')) {
+            const li = e.target.closest('.todo-item');
+            if (!li || !li.dataset.index) return;
+            const index = parseInt(li.dataset.index, 10);
+
+
+            if (e.key === 'Enter') {
+                const newText = e.target.value.trim();
+                if (newText) {
+                    todos[index].text = newText;
+                }
+                todos[index].isEditing = false;
+                saveTodos();
+                renderTodos();
+            } else if (e.key === 'Escape') {
+                todos[index].isEditing = false;
+                // Don't save, just re-render to cancel
+                renderTodos();
+            }
+        }
+    });
+
+
     // Auto-refresh durations every minute
     setInterval(() => {
         renderTodos();
     }, 60000);
 
 
-    // Initial render
+    // Initial setup on page load
+    applyTheme(); // Apply the saved theme first
     renderTodos();
 });
+
+
 
