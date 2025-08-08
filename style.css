@@ -268,7 +268,7 @@ h1 {
     border-radius: 4px;
     background-color: var(--input-bg-color);
     font-size: 12px;
-    margin-left: 10px;
+    margin-top: 8px;
     color: var(--text-color);
     cursor: pointer;
     -webkit-appearance: none;
@@ -413,6 +413,17 @@ h1 {
     outline: none;
     border-color: var(--button-bg-color);
     box-shadow: 0 0 0 2px var(--button-bg-color-transparent);
+}
+
+
+.details-editor a {
+    color: var(--edit-button-bg-color);
+    text-decoration: underline;
+}
+
+
+.details-editor a:hover {
+    text-decoration: none;
 }
 footer {
     text-align: center;
