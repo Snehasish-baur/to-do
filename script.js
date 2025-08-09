@@ -3,42 +3,71 @@ document.addEventListener('DOMContentLoaded', () => {
     const addBtn = document.getElementById('add-btn');
     const todoList = document.getElementById('todo-list');
     const themeToggleBtn = document.getElementById('theme-toggle');
+    const colorThemeBtn = document.getElementById('color-theme-btn');
     const body = document.body;
 
 
-    // --- THEME SWITCHER LOGIC ---
+    // --- THEME & MODE SWITCHER LOGIC ---
 
 
-    // Function to apply the saved or default theme
-    const applyTheme = () => {
-        // 1. Get theme from localStorage, defaulting to 'light'
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        // 2. Remove any existing theme classes to avoid conflicts
-        body.classList.remove('light-mode', 'dark-mode');
-        // 3. Add the correct theme class to the body
-        body.classList.add(`${savedTheme}-mode`);
-        // 4. Update the button text to show the next action
+    // --- Dark/Light Mode Logic ---
+    const applyMode = () => {
+        const savedMode = localStorage.getItem('mode') || 'light';
+        if (savedMode === 'dark') {
+            body.classList.add('dark-mode');
+        } else {
+            body.classList.remove('dark-mode');
+        }
         if (themeToggleBtn) {
-            themeToggleBtn.textContent = savedTheme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode';
+            themeToggleBtn.innerHTML = savedMode === 'light' ? '🌙' : '☀️';
+            themeToggleBtn.setAttribute('aria-label', savedMode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode');
         }
     };
 
 
-    // Event listener for the theme toggle button
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = body.classList.contains('dark-mode') ? 'dark' : 'light';
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            localStorage.setItem('theme', newTheme); // Save the new theme preference
-            applyTheme();
+            const newMode = body.classList.contains('dark-mode') ? 'light' : 'dark';
+            localStorage.setItem('mode', newMode);
+            applyMode();
+        });
+    }
+
+
+    // --- Color Theme Logic ---
+    const allThemeClasses = ['theme-ocean', 'theme-forest']; // Amethyst is default (no class)
+    const themeCycleOrder = ['theme-amethyst', 'theme-ocean', 'theme-forest'];
+    const themeIcons = {
+        'theme-amethyst': '🎨',
+        'theme-ocean': '🌊',
+        'theme-forest': '🌲'
+    };
+
+
+    const applyColorTheme = (themeName) => {
+        body.classList.remove(...allThemeClasses);
+        if (themeName !== 'theme-amethyst') {
+            body.classList.add(themeName);
+        }
+        localStorage.setItem('colorTheme', themeName);
+        if (colorThemeBtn) {
+            colorThemeBtn.innerHTML = themeIcons[themeName] || '🎨';
+        }
+    };
+
+
+    if (colorThemeBtn) {
+        colorThemeBtn.addEventListener('click', () => {
+            const currentTheme = localStorage.getItem('colorTheme') || 'theme-amethyst';
+            const currentIndex = themeCycleOrder.indexOf(currentTheme);
+            const nextTheme = themeCycleOrder[(currentIndex + 1) % themeCycleOrder.length];
+            applyColorTheme(nextTheme);
         });
     }
 
 
     // Load todos from local storage
     let todos = JSON.parse(localStorage.getItem('todos')) || [];
-
-
 
 
     // --- MIGRATION LOGIC ---
@@ -387,9 +416,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Add a confirmation dialog before deleting
             if (confirm(`Are you sure you want to delete this task:\n"${taskText}"`)) {
-                todos.splice(index, 1);
-                saveTodos();
-                renderTodos();
+                li.classList.add('removing'); // Add class to trigger animation
+
+
+                // Wait for animation to finish before removing from data and re-rendering
+                li.addEventListener('animationend', () => {
+                    todos.splice(index, 1);
+                    saveTodos();
+                    renderTodos();
+                }, { once: true }); // Use { once: true } to auto-remove listener
             }
         }
         // Handle details button clicks to toggle the editor
@@ -533,8 +568,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 60000);
 
 
-    // Initial setup on page load
-    applyTheme(); // Apply the saved theme first
+    // --- Initial Setup on Page Load ---
+    const savedColorTheme = localStorage.getItem('colorTheme') || 'theme-amethyst';
+    applyColorTheme(savedColorTheme); // Apply saved color theme
+    applyMode(); // Apply the saved dark/light mode
     renderTodos();
 });
 
